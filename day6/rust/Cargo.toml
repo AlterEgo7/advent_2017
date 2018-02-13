@@ -1,0 +1,11 @@
+[package]
+name = "advent-6"
+version = "0.1.0"
+authors = ["Sakis Karagiannis <sakiskar90@gmail.com>"]
+
+[lib]
+name = "advent6"
+path = "src/lib.rs"
+
+[dependencies]
+cuckoofilter = "0.3.2"
