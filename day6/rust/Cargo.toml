@@ -8,4 +8,3 @@ name = "advent6"
 path = "src/lib.rs"
 
 [dependencies]
-cuckoofilter = "0.3.2"

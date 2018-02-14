@@ -1,12 +1,12 @@
-extern crate cuckoofilter;
+use std::collections::HashSet;
 
 pub fn count_redistributions(mut memory_banks: Vec<i32>) -> i32 {
-  let mut cf = cuckoofilter::CuckooFilter::new();
+  let mut set = HashSet::new();
   let mut counter = 0;
 
-  while !cf.contains(&memory_banks) {
+  while !set.contains(&memory_banks) {
     // println!("{:?}", memory_banks);
-    cf.add(&memory_banks);
+    set.insert(memory_banks.clone());
     cycle(&mut memory_banks);
     counter += 1;
   }
