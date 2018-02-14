@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-pub fn count_redistributions(mut memory_banks: Vec<i32>) -> i32 {
+pub fn count_redistributions(mut memory_banks: Vec<i32>) -> (i32, i32) {
   let mut set = HashSet::new();
   let mut counter = 0;
 
@@ -12,7 +12,18 @@ pub fn count_redistributions(mut memory_banks: Vec<i32>) -> i32 {
   }
 
   println!("{:?}", memory_banks);
-  counter
+
+  let target = memory_banks.clone();
+
+  let mut loop_counter = 1;
+  cycle(&mut memory_banks);
+
+  while memory_banks != target {
+    cycle(&mut memory_banks);
+    loop_counter += 1;
+  }
+
+  (counter, loop_counter)
 }
 
 fn cycle(vec: &mut Vec<i32>) {

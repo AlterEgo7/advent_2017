@@ -1,3 +1,13 @@
+extern crate regex;
+use regex::Regex;
+
+pub fn parse_tree(input: String) -> Tree<String, u32> {
+  let re = Regex::new(r"(\w+)\s\((\d+)\)(\s->\s)?(.+)?").unwrap();
+
+  Tree::Empty
+}
+
+
 #[derive(Debug, Clone)]
 pub enum Tree<T, W> {
   Node {
