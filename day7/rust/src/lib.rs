@@ -3,9 +3,9 @@ use regex::{Regex, Captures};
 use std::collections::HashMap;
 use Tree::*;
 
-type Forest<V, W> = Vec<Tree<V, W>>;
-struct NodeIndex<V, W> {
-  map: HashMap<V, Tree<V, W>>,
+type Forest<V: Clone, W: Clone> = Vec<Box<Tree<V, W>>>;
+struct NodeIndex<V: Clone, W: Clone> {
+  map: HashMap<V, Box<Tree<V, W>>>,
   forest: Forest<V, W>
 }
 
@@ -25,14 +25,14 @@ fn parse_node(input: String, node_map: NodeIndex<String, u32>) -> Tree<String, u
   }
 }
 
-fn create_nodes(input: &str, node_map: NodeIndex<String, u32>) -> Vec<Tree<String, u32>> {
+fn create_nodes(input: &str, node_map: NodeIndex<String, u32>) -> Vec<Box<Tree<String, u32>>> {
   unimplemented!()
 }
 
 #[derive(Debug, Clone)]
-pub enum Tree<T, W> {
+pub enum Tree<T: Clone, W: Clone> {
   Node {
-    nodes: Vec<Tree<T, W>>,
+    nodes: Vec<Box<Tree<T, W>>>,
     value: T,
     weight: W,
   },
@@ -43,8 +43,10 @@ pub enum Tree<T, W> {
   Empty,
 }
 
-impl<T, W> Tree<T, W> {
-  pub fn add(self, node: Tree<T, W>) -> Tree<T, W> {
+impl<T, W> Tree<T, W>
+    where T: Clone, W: Clone
+{
+  pub fn add(self, node: Box<Tree<T, W>>) -> Tree<T, W> {
     use Tree::*;
     match self {
       Node {
@@ -64,7 +66,7 @@ impl<T, W> Tree<T, W> {
         value: value,
         weight: weight,
       },
-      Empty => node,
+      Empty => *node.clone(),
     }
   }
   pub fn set_values(self, value: T, weight: W) -> Tree<T, W> {
