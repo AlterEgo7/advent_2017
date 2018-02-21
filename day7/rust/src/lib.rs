@@ -2,12 +2,27 @@ extern crate matches;
 extern crate regex;
 use regex::{Captures, Regex};
 use std::collections::HashMap;
+use std::hash::Hash;
 use Tree::*;
 
-type Forest<V: Clone, W: Clone> = Vec<Box<Tree<V, W>>>;
-struct NodeIndex<V: Clone, W: Clone> {
+type Forest<V, W> = Vec<Box<Tree<V, W>>>;
+
+#[derive(Debug, Clone)]
+pub struct NodeIndex<V: Clone + Eq + Hash, W: Clone> {
   map: HashMap<V, Box<Tree<V, W>>>,
   forest: Forest<V, W>,
+}
+
+impl<V, W> NodeIndex<V, W>
+where V: Clone + Eq + Hash,
+      W: Clone
+{
+  pub fn new() -> NodeIndex<V, W> {
+    NodeIndex {
+      map: HashMap::new(),
+      forest: Forest::new()
+    }
+  }
 }
 
 pub fn parse_tree(input: String) -> Tree<String, u32> {
@@ -205,5 +220,13 @@ mod tests {
     };
     let new_tree = node.add(Box::new(Tree::Leaf{value: "test", weight: 2}));
     assert_eq!(new_tree.nodes().unwrap().len(), 2);
+  }
+
+  #[test]
+  fn parse_node_test() {
+    let input = String::from("pbga (66)");
+    let node = parse_node(input, NodeIndex::new());
+    assert_eq!(node.value().unwrap(), "pbga");
+    assert_eq!(node.weight().unwrap(), 66);
   }
 }
