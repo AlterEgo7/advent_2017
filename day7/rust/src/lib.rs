@@ -3,13 +3,14 @@ extern crate regex;
 use regex::{Captures, Regex};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::rc::Rc;
 use Tree::*;
 
-type Forest<V, W> = Vec<Box<Tree<V, W>>>;
+type Forest<V, W> = Vec<Rc<Tree<V, W>>>;
 
 #[derive(Debug, Clone)]
 pub struct NodeIndex<V: Clone + Eq + Hash, W: Clone> {
-  map: HashMap<V, Box<Tree<V, W>>>,
+  map: HashMap<V, Rc<Tree<V, W>>>,
   forest: Forest<V, W>,
 }
 
@@ -29,25 +30,38 @@ pub fn parse_tree(input: String) -> Tree<String, u32> {
   unimplemented!()
 }
 
-fn parse_node(input: String, node_map: NodeIndex<String, u32>) -> Tree<String, u32> {
+fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<String, u32>> {
   let re = Regex::new(r"(\w+)\s\((\d+)\)(\s->\s)?(.+)?").unwrap();
   let captures = re.captures(&input).unwrap();
 
   match (captures.get(1), captures.get(2), captures.get(4)) {
-    (Some(name), Some(weight), None) => Leaf {
-      value: name.as_str().to_string(),
-      weight: weight.as_str().parse::<u32>().unwrap(),
-    },
-    (Some(name), Some(weight), Some(node_string)) => Node {
-      value: name.as_str().to_string(),
-      weight: weight.as_str().parse::<u32>().unwrap(),
-      nodes: create_nodes(node_string.as_str(), node_map),
+    (Some(name), Some(weight), None) => {
+
+      let new_node = Leaf {
+        value: name.as_str().to_string(),
+        weight: weight.as_str().parse::<u32>().unwrap(),
+      };
+      let rc = Rc::new(new_node);
+      node_map.map.insert(name.as_str().to_string(), Rc::clone(&rc));
+
+      Rc::clone(&rc)
+    }
+    (Some(name), Some(weight), Some(node_string)) => {
+      let new_node = Node {
+        value: name.as_str().to_string(),
+        weight: weight.as_str().parse::<u32>().unwrap(),
+        nodes: create_nodes(node_string.as_str(), node_map),
+      };
+      let rc = Rc::new(new_node);
+      node_map.map.insert(name.as_str().to_string(), Rc::clone(&rc));
+
+      Rc::clone(&rc)
     },
     _ => panic!("parse error!"),
   }
 }
 
-fn create_nodes(input: &str, node_map: NodeIndex<String, u32>) -> Vec<Box<Tree<String, u32>>> {
+fn create_nodes(input: &str, node_map: &NodeIndex<String, u32>) -> Vec<Box<Tree<String, u32>>> {
   unimplemented!()
 }
 
@@ -225,8 +239,10 @@ mod tests {
   #[test]
   fn parse_node_test() {
     let input = String::from("pbga (66)");
-    let node = parse_node(input, NodeIndex::new());
+    let mut index = NodeIndex::new();
+    let node = parse_node(input, &mut index);
     assert_eq!(node.value().unwrap(), "pbga");
     assert_eq!(node.weight().unwrap(), 66);
+    assert!(index.map.contains_key("pbga"));
   }
 }
