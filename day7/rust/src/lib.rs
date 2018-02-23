@@ -121,17 +121,13 @@ where
     match self {
       Node {
         nodes,
-        value: _,
-        weight: _,
+        ..
       } => Node {
         nodes,
         value,
         weight,
       },
-      Leaf {
-        value: _,
-        weight: _,
-      } => Leaf {
+      Leaf {..} => Leaf {
         value: value,
         weight: weight,
       },
@@ -146,12 +142,11 @@ where
     match *self {
       Node {
         ref value,
-        weight: _,
-        nodes: _,
+        ..
       } => Some(value.clone()),
       Leaf {
         ref value,
-        weight: _,
+        ..
       } => Some(value.clone()),
       Empty => None,
     }
@@ -160,13 +155,12 @@ where
   pub fn weight(&self) -> Option<W> {
     match *self {
       Node {
-        value: _,
         ref weight,
-        nodes: _,
+        ..
       } => Some(weight.clone()),
       Leaf {
-        value: _,
         ref weight,
+        ..
       } => Some(weight.clone()),
       Empty => None,
     }
@@ -175,9 +169,8 @@ where
   pub fn nodes(&self) -> Option<&NodeList<T, W>> {
     match *self {
       Node {
-        value: _,
-        weight: _,
         ref nodes,
+        ..
       } => Some(&nodes),
       _ => None,
     }
