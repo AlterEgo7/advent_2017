@@ -16,13 +16,14 @@ pub struct NodeIndex<V: Clone + Eq + Hash, W: Clone> {
 }
 
 impl<V, W> NodeIndex<V, W>
-where V: Clone + Eq + Hash,
-      W: Clone
+where
+  V: Clone + Eq + Hash,
+  W: Clone,
 {
   pub fn new() -> NodeIndex<V, W> {
     NodeIndex {
       map: HashMap::new(),
-      forest: Forest::new()
+      forest: Forest::new(),
     }
   }
 }
@@ -41,30 +42,30 @@ fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<S
       let weight = weight.as_str().parse::<u32>().unwrap();
 
       match node_map.map.entry(value.clone()) {
-          Entry::Occupied(mut node_ref) => {
-            let mut node = node_ref.get_mut();
-            (Rc::get_mut(node)).unwrap().set_values(value, weight);
-            Rc::clone(node)
-          },
-          Entry::Vacant(entry) => {
-            let new_node = Leaf { value, weight };
-            let rc = Rc::new(new_node);
-            entry.insert(Rc::clone(&rc));
-            rc
-          },
+        Entry::Occupied(mut node_ref) => {
+          let mut node = node_ref.get_mut();
+          (Rc::get_mut(node)).unwrap().set_values(value, weight);
+          Rc::clone(node)
+        }
+        Entry::Vacant(entry) => {
+          let new_node = Leaf { value, weight };
+          let rc = Rc::new(new_node);
+          entry.insert(Rc::clone(&rc));
+          rc
+        }
       }
     }
     (Some(name), Some(weight), Some(node_string)) => {
-      let new_node = Node {
-        value: name.as_str().to_string(),
-        weight: weight.as_str().parse::<u32>().unwrap(),
-        nodes: create_nodes(node_string.as_str(), node_map),
-      };
-      let rc = Rc::new(new_node);
-      node_map.map.insert(name.as_str().to_string(), Rc::clone(&rc));
+      match node_map.map.entry(name.as_str().to_string()) {
+        Entry::Occupied(node) => {
+          
+        }
+        Entry::Vacant(entry) => {
+        }
+      }
 
-      Rc::clone(&rc)
-    },
+      unimplemented!()
+    }
     _ => panic!("parse error!"),
   }
 }
@@ -120,7 +121,7 @@ where
           weight: weight.clone(),
         },
         &mut Empty => *node.clone(),
-      }
+      },
     }
   }
 
@@ -134,55 +135,42 @@ where
       } => {
         *old_value = value;
         *old_weight = weight;
-      },
+      }
       Leaf {
         value: ref mut old_value,
-        weight: ref mut old_weight
+        weight: ref mut old_weight,
       } => {
         *old_value = value;
         *old_weight = weight;
-      },
-      Empty => *self = Leaf {
-        value: value,
-        weight: weight,
-      },
+      }
+      Empty => {
+        *self = Leaf {
+          value: value,
+          weight: weight,
+        }
+      }
     }
   }
 
   pub fn value(&self) -> Option<T> {
     match *self {
-      Node {
-        ref value,
-        ..
-      } => Some(value.clone()),
-      Leaf {
-        ref value,
-        ..
-      } => Some(value.clone()),
+      Node { ref value, .. } => Some(value.clone()),
+      Leaf { ref value, .. } => Some(value.clone()),
       Empty => None,
     }
   }
 
   pub fn weight(&self) -> Option<W> {
     match *self {
-      Node {
-        ref weight,
-        ..
-      } => Some(weight.clone()),
-      Leaf {
-        ref weight,
-        ..
-      } => Some(weight.clone()),
+      Node { ref weight, .. } => Some(weight.clone()),
+      Leaf { ref weight, .. } => Some(weight.clone()),
       Empty => None,
     }
   }
 
   pub fn nodes(&self) -> Option<&NodeList<T, W>> {
     match *self {
-      Node {
-        ref nodes,
-        ..
-      } => Some(&nodes),
+      Node { ref nodes, .. } => Some(&nodes),
       _ => None,
     }
   }
@@ -238,7 +226,10 @@ mod tests {
         }),
       ],
     };
-    let new_tree = node.add(Box::new(Tree::Leaf{value: "test", weight: 2}));
+    let new_tree = node.add(Box::new(Tree::Leaf {
+      value: "test",
+      weight: 2,
+    }));
     assert_eq!(new_tree.nodes().unwrap().len(), 2);
   }
 
