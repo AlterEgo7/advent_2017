@@ -1,7 +1,8 @@
 extern crate matches;
 extern crate regex;
-use regex::{Captures, Regex};
+use regex::Regex;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
 use std::rc::Rc;
 use Tree::*;
@@ -36,15 +37,22 @@ fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<S
 
   match (captures.get(1), captures.get(2), captures.get(4)) {
     (Some(name), Some(weight), None) => {
+      let value = name.as_str().to_string();
+      let weight = weight.as_str().parse::<u32>().unwrap();
 
-      let new_node = Leaf {
-        value: name.as_str().to_string(),
-        weight: weight.as_str().parse::<u32>().unwrap(),
-      };
-      let rc = Rc::new(new_node);
-      node_map.map.insert(name.as_str().to_string(), Rc::clone(&rc));
-
-      Rc::clone(&rc)
+      match node_map.map.entry(value.clone()) {
+          Entry::Occupied(mut node_ref) => {
+            let mut node = node_ref.get_mut();
+            (Rc::get_mut(node)).unwrap().set_values(value, weight);
+            Rc::clone(node)
+          },
+          Entry::Vacant(entry) => {
+            let new_node = Leaf { value, weight };
+            let rc = Rc::new(new_node);
+            entry.insert(Rc::clone(&rc));
+            rc
+          },
+      }
     }
     (Some(name), Some(weight), Some(node_string)) => {
       let new_node = Node {
@@ -116,22 +124,25 @@ where
     }
   }
 
-  pub fn set_values(self, value: T, weight: W) -> Tree<T, W> {
+  pub fn set_values(&mut self, value: T, weight: W) {
     use Tree::*;
-    match self {
+    match *self {
       Node {
-        nodes,
+        value: ref mut old_value,
+        weight: ref mut old_weight,
         ..
-      } => Node {
-        nodes,
-        value,
-        weight,
+      } => {
+        *old_value = value;
+        *old_weight = weight;
       },
-      Leaf {..} => Leaf {
-        value: value,
-        weight: weight,
+      Leaf {
+        value: ref mut old_value,
+        weight: ref mut old_weight
+      } => {
+        *old_value = value;
+        *old_weight = weight;
       },
-      Empty => Leaf {
+      Empty => *self = Leaf {
         value: value,
         weight: weight,
       },
@@ -184,17 +195,19 @@ mod tests {
 
   #[test]
   fn tree_set_values_empty() {
-    let tree = Tree::Empty.set_values("123", 42);
+    let mut tree = Tree::Empty;
+    tree.set_values("123", 42);
     assert_eq!(tree.value(), Some("123"));
     assert_eq!(tree.weight(), Some(42));
   }
 
   #[test]
   fn tree_set_values_leaf() {
-    let tree = Tree::Leaf {
+    let mut tree = Tree::Leaf {
       value: "initial",
       weight: 42,
-    }.set_values("123", 42);
+    };
+    tree.set_values("123", 42);
     assert_eq!(tree.value(), Some("123"));
     assert_eq!(tree.weight(), Some(42));
   }
@@ -215,7 +228,7 @@ mod tests {
 
   #[test]
   fn tree_add_node_node() {
-    let mut node = &mut Tree::Node {
+    let node = &mut Tree::Node {
       value: "initial",
       weight: 42,
       nodes: vec![
