@@ -51,6 +51,7 @@ fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<S
           let new_node = Leaf { value, weight };
           let rc = Rc::new(new_node);
           entry.insert(Rc::clone(&rc));
+          node_map.forest.push(Rc::clone(&rc));
           rc
         }
       }
