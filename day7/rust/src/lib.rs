@@ -1,10 +1,11 @@
-extern crate matches;
 extern crate regex;
+extern crate matches;
 use regex::Regex;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::hash::Hash;
 use std::rc::Rc;
+use std::str::Split;
 use Tree::*;
 
 type Forest<V, W> = Vec<Rc<Tree<V, W>>>;
@@ -37,42 +38,53 @@ fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<S
   let captures = re.captures(&input).unwrap();
 
   match (captures.get(1), captures.get(2), captures.get(4)) {
-    (Some(name), Some(weight), None) => {
+    (Some(name), Some(weight), None) => create_node(name.as_str().to_string(), weight.as_str().parse::<u32>().unwrap(), None, node_map),
+    (Some(name), Some(weight), Some(node_string)) => {
       let value = name.as_str().to_string();
       let weight = weight.as_str().parse::<u32>().unwrap();
-
-      match node_map.map.entry(value.clone()) {
-        Entry::Occupied(mut node_ref) => {
-          let mut node = node_ref.get_mut();
-          (Rc::get_mut(node)).unwrap().set_values(value, weight);
-          Rc::clone(node)
-        }
-        Entry::Vacant(entry) => {
-          let new_node = Leaf { value, weight };
-          let rc = Rc::new(new_node);
-          entry.insert(Rc::clone(&rc));
-          node_map.forest.push(Rc::clone(&rc));
-          rc
-        }
-      }
-    }
-    (Some(name), Some(weight), Some(node_string)) => {
-      match node_map.map.entry(name.as_str().to_string()) {
-        Entry::Occupied(node) => {
-          
-        }
-        Entry::Vacant(entry) => {
-        }
-      }
-
-      unimplemented!()
-    }
+      let children = Some(node_string.as_str().split(", "));
+      create_node(value, weight, children, node_map)
+    },
     _ => panic!("parse error!"),
   }
 }
 
 fn create_nodes(input: &str, node_map: &NodeIndex<String, u32>) -> Vec<Box<Tree<String, u32>>> {
   unimplemented!()
+}
+
+fn create_node(value: String, weight: u32, children: Option<Split<&str>>, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<String, u32>> {
+  match children {
+    Some(nodes) => {
+      match node_map.map.entry(value.clone()) {
+        Entry::Occupied(mut node_ref) => {
+          Rc::get_mut(node_ref.get_mut()).unwrap().set_values(
+            value,
+            weight,
+          );
+
+          for child in nodes {}
+        }
+        Entry::Vacant(entry) => {}
+      }
+
+      unimplemented!()
+    },
+    None => match node_map.map.entry(value.clone()) {
+      Entry::Occupied(mut node_ref) => {
+        let mut node = node_ref.get_mut();
+        (Rc::get_mut(node)).unwrap().set_values(value, weight);
+        Rc::clone(node)
+      }
+      Entry::Vacant(entry) => {
+        let new_node = Leaf { value, weight };
+        let rc = Rc::new(new_node);
+        entry.insert(Rc::clone(&rc));
+        node_map.forest.push(Rc::clone(&rc));
+        rc
+      }
+    },
+  }
 }
 
 type NodeList<T, W> = Vec<Box<Tree<T, W>>>;
