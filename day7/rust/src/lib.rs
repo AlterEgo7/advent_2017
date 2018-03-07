@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::str::Split;
 use Node::*;
 
-pub type w_size = u32;
+pub type WSize = u32;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Tree<V: Clone + Eq + Hash + Debug> (Rc<Node<V>>);
@@ -19,12 +19,12 @@ pub struct Tree<V: Clone + Eq + Hash + Debug> (Rc<Node<V>>);
 pub enum Node<V: Clone + Eq + Hash + Debug> {
   Internal {
     value: V,
-    weight: w_size,
+    weight: WSize,
     children: Vec<Tree<V>>
   },
   Leaf {
     value: V,
-    weight: w_size
+    weight: WSize
   }
 }
 
@@ -52,7 +52,11 @@ impl<'a, V> Tree<V>
 where
   V: Clone + Eq + Hash + Debug
 {
-  pub fn from_children(value: V, weight: w_size, children: Vec<Self>) -> Self {
+  pub fn new(value: V, weight: WSize) -> Self {
+    Self::from_children(value, weight, vec![])
+  }
+
+  pub fn from_children(value: V, weight: WSize, children: Vec<Self>) -> Self {
     let element = if children.is_empty() {
       Leaf { value, weight }
     } else {
@@ -60,6 +64,27 @@ where
     };
 
     Tree(Rc::new(element))
+  }
+
+  pub fn value(&self) -> &V {
+    match self.0.as_ref() {
+        &Internal { ref value, .. } => value,
+        &Leaf { ref value, .. } => value,
+    }
+  }
+
+    pub fn weight(&self) -> WSize {
+      match self.0.as_ref() {
+          &Internal { weight, .. } => weight,
+          &Leaf { weight, .. } => weight,
+      }
+    }
+
+    pub fn children(&self) -> Option<&Vec<Tree<V>>> {
+      match self.0.as_ref() {
+          &Internal { ref children, .. } => Some(children),
+          &Leaf { .. } => None,
+    }
   }
 }
 
@@ -69,64 +94,17 @@ mod tests {
   use matches::*;
 
   #[test]
-  fn tree_set_values_empty() {
-    let mut tree = Tree::Empty;
-    tree.set_values("123", 42);
-    assert_eq!(tree.value(), Some("123"));
-    assert_eq!(tree.weight(), Some(42));
+  fn tree_new() {
+    let tree = Tree::new("test", 42);
+    assert_eq!(*tree.value(), "test");
+    assert_eq!(tree.weight(), 42);
   }
 
   #[test]
-  fn tree_set_values_leaf() {
-    let mut tree = Tree::Leaf {
-      value: "initial",
-      weight: 42,
-    };
-    tree.set_values("123", 42);
-    assert_eq!(tree.value(), Some("123"));
-    assert_eq!(tree.weight(), Some(42));
-  }
-
-  #[test]
-  fn tree_add_node_leaf() {
-    let mut tree = &mut Tree::Leaf {
-      value: "initial",
-      weight: 42,
-    };
-    let new_tree = tree.add(Box::new(Tree::Leaf {
-      value: "test",
-      weight: 32,
-    }));
-    assert!(matches!(new_tree, Tree::Node{value, weight, ref nodes}));
-    assert_eq!(new_tree.nodes().unwrap().len(), 1);
-  }
-
-  #[test]
-  fn tree_add_node_node() {
-    let node = &mut Tree::Node {
-      value: "initial",
-      weight: 42,
-      nodes: vec![
-        Box::new(Tree::Leaf {
-          value: "test",
-          weight: 7,
-        }),
-      ],
-    };
-    let new_tree = node.add(Box::new(Tree::Leaf {
-      value: "test",
-      weight: 2,
-    }));
-    assert_eq!(new_tree.nodes().unwrap().len(), 2);
-  }
-
-  #[test]
-  fn parse_node_test() {
-    let input = String::from("pbga (66)");
-    let mut index = NodeIndex::new();
-    let node = parse_node(input, &mut index);
-    assert_eq!(node.value().unwrap(), "pbga");
-    assert_eq!(node.weight().unwrap(), 66);
-    assert!(index.map.contains_key("pbga"));
+  fn test_from_children() {
+    let children = vec![Tree::new("child1", 1)];
+    let tree = Tree::from_children("test", 42, children);
+    let child = &tree.children().unwrap()[0];
+    assert_eq!(child.weight(), 1);
   }
 }
