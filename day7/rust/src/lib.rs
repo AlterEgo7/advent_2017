@@ -8,11 +8,29 @@ use std::rc::Rc;
 use std::str::Split;
 use Tree::*;
 
-type Forest<V, W> = Vec<Rc<Tree<V, W>>>;
+pub trait Item: Clone + Eq + Hash + fmt::Debug {}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Tree<V: Item, W: Item> (Rc<Node<V, W>>);
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub enum Node<V: Item, W: Item> {
+  Internal {
+    value: V,
+    weight: W,
+    children: Vec<Tree<V, W>>
+  },
+  Leaf {
+    value: V,
+    weight: W
+  }
+}
+
+type Forest<V, W> = Vec<Tree<V, W>>;
 
 #[derive(Debug, Clone)]
-pub struct NodeIndex<V: Clone + Eq + Hash, W: Clone> {
-  map: HashMap<V, Rc<Tree<V, W>>>,
+pub struct NodeIndex<V: Item, W: Item> {
+  map: HashMap<V, Rc<Node<V, W>>>,
   forest: Forest<V, W>,
 }
 
@@ -84,108 +102,6 @@ fn create_node(value: String, weight: u32, children: Option<Split<&str>>, node_m
         rc
       }
     },
-  }
-}
-
-type NodeList<T, W> = Vec<Box<Tree<T, W>>>;
-#[derive(Debug, Clone)]
-pub enum Tree<T: Clone, W: Clone> {
-  Node {
-    nodes: NodeList<T, W>,
-    value: T,
-    weight: W,
-  },
-  Leaf {
-    value: T,
-    weight: W,
-  },
-  Empty,
-}
-
-impl<T, W> Tree<T, W>
-where
-  T: Clone,
-  W: Clone,
-{
-  pub fn add(&mut self, node: Box<Tree<T, W>>) -> Tree<T, W> {
-    use Tree::*;
-
-    match *node {
-      Empty => self.clone(),
-      _ => match self {
-        &mut Node {
-          ref mut nodes,
-          ref value,
-          ref weight,
-        } => {
-          nodes.push(node);
-          Node {
-            nodes: nodes.clone(),
-            value: value.clone(),
-            weight: weight.clone(),
-          }
-        }
-        &mut Leaf {
-          ref value,
-          ref weight,
-        } => Node {
-          nodes: vec![node],
-          value: value.clone(),
-          weight: weight.clone(),
-        },
-        &mut Empty => *node.clone(),
-      },
-    }
-  }
-
-  pub fn set_values(&mut self, value: T, weight: W) {
-    use Tree::*;
-    match *self {
-      Node {
-        value: ref mut old_value,
-        weight: ref mut old_weight,
-        ..
-      } => {
-        *old_value = value;
-        *old_weight = weight;
-      }
-      Leaf {
-        value: ref mut old_value,
-        weight: ref mut old_weight,
-      } => {
-        *old_value = value;
-        *old_weight = weight;
-      }
-      Empty => {
-        *self = Leaf {
-          value: value,
-          weight: weight,
-        }
-      }
-    }
-  }
-
-  pub fn value(&self) -> Option<T> {
-    match *self {
-      Node { ref value, .. } => Some(value.clone()),
-      Leaf { ref value, .. } => Some(value.clone()),
-      Empty => None,
-    }
-  }
-
-  pub fn weight(&self) -> Option<W> {
-    match *self {
-      Node { ref weight, .. } => Some(weight.clone()),
-      Leaf { ref weight, .. } => Some(weight.clone()),
-      Empty => None,
-    }
-  }
-
-  pub fn nodes(&self) -> Option<&NodeList<T, W>> {
-    match *self {
-      Node { ref nodes, .. } => Some(&nodes),
-      _ => None,
-    }
   }
 }
 
