@@ -1,45 +1,46 @@
+#![feature(slice_patterns)]
 extern crate regex;
 extern crate matches;
 use regex::Regex;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::hash::Hash;
+use std::fmt::Debug;
 use std::rc::Rc;
 use std::str::Split;
-use Tree::*;
+use Node::*;
 
-pub trait Item: Clone + Eq + Hash + fmt::Debug {}
-
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Tree<V: Item, W: Item> (Rc<Node<V, W>>);
+pub type w_size = u32;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub enum Node<V: Item, W: Item> {
+pub struct Tree<V: Clone + Eq + Hash + Debug> (Rc<Node<V>>);
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub enum Node<V: Clone + Eq + Hash + Debug> {
   Internal {
     value: V,
-    weight: W,
-    children: Vec<Tree<V, W>>
+    weight: w_size,
+    children: Vec<Tree<V>>
   },
   Leaf {
     value: V,
-    weight: W
+    weight: w_size
   }
 }
 
-type Forest<V, W> = Vec<Tree<V, W>>;
+type Forest<V> = Vec<Tree<V>>;
 
 #[derive(Debug, Clone)]
-pub struct NodeIndex<V: Item, W: Item> {
-  map: HashMap<V, Rc<Node<V, W>>>,
-  forest: Forest<V, W>,
+pub struct NodeIndex<V: Clone + Eq + Hash + Debug> {
+  map: HashMap<V, Rc<Node<V>>>,
+  forest: Forest<V>,
 }
 
-impl<V, W> NodeIndex<V, W>
+impl<V> NodeIndex<V>
 where
-  V: Clone + Eq + Hash,
-  W: Clone,
+  V: Clone + Eq + Hash + Debug
 {
-  pub fn new() -> NodeIndex<V, W> {
+  pub fn new() -> Self {
     NodeIndex {
       map: HashMap::new(),
       forest: Forest::new(),
@@ -47,61 +48,18 @@ where
   }
 }
 
-pub fn parse_tree(input: String) -> Tree<String, u32> {
-  unimplemented!()
-}
+impl<'a, V> Tree<V> 
+where
+  V: Clone + Eq + Hash + Debug
+{
+  pub fn from_children(value: V, weight: w_size, children: Vec<Self>) -> Self {
+    let element = if children.is_empty() {
+      Leaf { value, weight }
+    } else {
+      Internal { value, weight, children }
+    };
 
-fn parse_node(input: String, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<String, u32>> {
-  let re = Regex::new(r"(\w+)\s\((\d+)\)(\s->\s)?(.+)?").unwrap();
-  let captures = re.captures(&input).unwrap();
-
-  match (captures.get(1), captures.get(2), captures.get(4)) {
-    (Some(name), Some(weight), None) => create_node(name.as_str().to_string(), weight.as_str().parse::<u32>().unwrap(), None, node_map),
-    (Some(name), Some(weight), Some(node_string)) => {
-      let value = name.as_str().to_string();
-      let weight = weight.as_str().parse::<u32>().unwrap();
-      let children = Some(node_string.as_str().split(", "));
-      create_node(value, weight, children, node_map)
-    },
-    _ => panic!("parse error!"),
-  }
-}
-
-fn create_nodes(input: &str, node_map: &NodeIndex<String, u32>) -> Vec<Box<Tree<String, u32>>> {
-  unimplemented!()
-}
-
-fn create_node(value: String, weight: u32, children: Option<Split<&str>>, node_map: &mut NodeIndex<String, u32>) -> Rc<Tree<String, u32>> {
-  match children {
-    Some(nodes) => {
-      match node_map.map.entry(value.clone()) {
-        Entry::Occupied(mut node_ref) => {
-          Rc::get_mut(node_ref.get_mut()).unwrap().set_values(
-            value,
-            weight,
-          );
-
-          for child in nodes {}
-        }
-        Entry::Vacant(entry) => {}
-      }
-
-      unimplemented!()
-    },
-    None => match node_map.map.entry(value.clone()) {
-      Entry::Occupied(mut node_ref) => {
-        let mut node = node_ref.get_mut();
-        (Rc::get_mut(node)).unwrap().set_values(value, weight);
-        Rc::clone(node)
-      }
-      Entry::Vacant(entry) => {
-        let new_node = Leaf { value, weight };
-        let rc = Rc::new(new_node);
-        entry.insert(Rc::clone(&rc));
-        node_map.forest.push(Rc::clone(&rc));
-        rc
-      }
-    },
+    Tree(Rc::new(element))
   }
 }
 
