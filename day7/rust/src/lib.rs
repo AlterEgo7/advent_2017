@@ -73,10 +73,10 @@ where
     }
   }
 
-    pub fn weight(&self) -> WSize {
+    pub fn weight(&self) -> &WSize {
       match self.0.as_ref() {
-          &Internal { weight, .. } => weight,
-          &Leaf { weight, .. } => weight,
+          &Internal { ref weight, .. } => weight,
+          &Leaf { ref weight, .. } => weight,
       }
     }
 
@@ -97,7 +97,7 @@ mod tests {
   fn tree_new() {
     let tree = Tree::new("test", 42);
     assert_eq!(*tree.value(), "test");
-    assert_eq!(tree.weight(), 42);
+    assert!(*tree.weight() == 42);
   }
 
   #[test]
@@ -105,6 +105,6 @@ mod tests {
     let children = vec![Tree::new("child1", 1)];
     let tree = Tree::from_children("test", 42, children);
     let child = &tree.children().unwrap()[0];
-    assert_eq!(child.weight(), 1);
+    assert!(*child.weight() == 1);
   }
 }

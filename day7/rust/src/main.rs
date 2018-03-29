@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
-extern crate regex;
+extern crate regex; 
 extern crate day7;
 use day7::*;
 use regex::Regex;
