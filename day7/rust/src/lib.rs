@@ -3,7 +3,7 @@ extern crate regex;
 extern crate matches;
 use regex::Regex;
 use std::collections::HashMap;
-use std::collections::hash_map::Entry;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::hash::Hash;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -87,6 +87,21 @@ where
     }
   }
 }
+
+pub fn create_leaf<V: Clone + Eq + Hash + Debug>(value: V, new_weight: WSize, mut node_index: NodeIndex<V>) {
+  match node_index.map.entry(value.clone()) {
+    Vacant(entry) => {
+      let tree = Tree::new(value, new_weight);
+      entry.insert(Rc::clone(&tree.0));
+      node_index.forest.push(tree);
+    }
+    Occupied(mut node) => match Rc::get_mut(&mut node.get_mut()).unwrap() {
+      &mut Internal { ref mut weight, .. } => *weight = new_weight,
+      &mut Leaf { ref mut weight, .. } => *weight = new_weight
+    }
+  }
+}
+
 
 #[cfg(test)]
 mod tests {
