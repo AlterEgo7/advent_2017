@@ -88,7 +88,7 @@ where
   }
 }
 
-pub fn create_leaf<V: Clone + Eq + Hash + Debug>(value: V, new_weight: WSize, mut node_index: NodeIndex<V>) {
+pub fn create_leaf<V: Clone + Eq + Hash + Debug>(value: V, new_weight: WSize, node_index: &mut NodeIndex<V>) {
   match node_index.map.entry(value.clone()) {
     Vacant(entry) => {
       let tree = Tree::new(value, new_weight);
@@ -121,5 +121,13 @@ mod tests {
     let tree = Tree::from_children("test", 42, children);
     let child = &tree.children().unwrap()[0];
     assert!(*child.weight() == 1);
+  }
+
+  #[test]
+  fn test_vacant_create_leaf() {
+    let mut index = NodeIndex::new();
+    create_leaf("test", 42, &mut index);
+    assert_eq!(index.map.get("test"), Some(&Rc::new(Leaf { value: "test", weight: 42 })));
+    assert_eq!(index.forest.len(), 1);
   }
 }
