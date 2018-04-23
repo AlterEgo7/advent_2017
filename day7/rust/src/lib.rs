@@ -32,8 +32,8 @@ type Forest<V> = Vec<Tree<V>>;
 
 #[derive(Debug, Clone)]
 pub struct NodeIndex<V: Clone + Eq + Hash + Debug> {
-  map: HashMap<V, Rc<Node<V>>>,
-  forest: Forest<V>,
+  pub map: HashMap<V, Rc<Node<V>>>,
+  pub forest: Forest<V>,
 }
 
 impl<V> NodeIndex<V>
@@ -102,6 +102,38 @@ pub fn create_leaf<V: Clone + Eq + Hash + Debug>(value: V, new_weight: WSize, no
   }
 }
 
+pub fn create_internal_node<V: Clone + Eq + Hash + Debug>(value: V, new_weight: WSize,
+  node_index: &mut NodeIndex<V>, children_values: Vec<V>) {
+    let children = get_children(children_values.iter(), node_index);
+}
+
+// fn get_children<'a, V: Clone + Eq + Hash + Debug, I: Debug>(values: I, node_index: &'a mut NodeIndex<V>) -> Vec<&'a Rc<Node<V>>>
+// where 
+//   I: Iterator<Item = &'a V> {
+//   let mapped = values.map(|value| {
+//     node_index.map.get(value)
+//   })
+//   .filter(|option| {
+//     option.is_some()
+//   })
+//   .map(|v| v.unwrap());
+//   let test = mapped.collect();
+//   println!("{:?}", test);
+//   test
+// }
+
+fn get_children<'a, V: Clone + Eq + Hash + Debug, I: Debug>(values: I, node_index: &'a mut NodeIndex<V>) -> Vec<&'a Rc<Node<V>>>
+where 
+  I: Iterator<Item = &'a V> {
+    let options = values.map(|value| {
+      node_index.map.get(value)
+    })
+    .filter(|v| { v.is_some() })
+    .map(|v| { v.unwrap() });
+
+    println!("{:?}", options);
+    options.collect()
+}
 
 #[cfg(test)]
 mod tests {
@@ -129,5 +161,11 @@ mod tests {
     create_leaf("test", 42, &mut index);
     assert_eq!(index.map.get("test"), Some(&Rc::new(Leaf { value: "test", weight: 42 })));
     assert_eq!(index.forest.len(), 1);
+  }
+
+  fn test_create_internal_node() {
+    let mut index = NodeIndex::new();
+    create_leaf("test", 42, &mut index);
+    create_internal_node("test2", 2, &mut index, vec!["test", "b"]);
   }
 }

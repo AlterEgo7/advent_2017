@@ -4,6 +4,7 @@ extern crate regex;
 extern crate day7;
 use day7::*;
 use regex::Regex;
+use std::rc::Rc;
 
 fn main() {
     let mut file = File::open("input.txt").expect("not found");
@@ -14,5 +15,10 @@ fn main() {
     let capt = re.captures("fwft (72) -> ktlj, cntj, xhth").unwrap();
     
 
-    println!("{:?}", capt);
+    // println!("{:?}", capt);
+
+    let mut index = NodeIndex::new();
+    index.map.insert("test1", Rc::new(Node::Leaf{ value: "test1", weight: 1}));
+
+    create_internal_node("check", 7, &mut index, vec!["test1", "test2", "test3"])
 }
