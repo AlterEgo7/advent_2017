@@ -12,18 +12,18 @@ object Registers {
     println(getMax(Source.fromFile("input8.txt").getLines()))
   }
 
-  def getMax(operations: Iterator[String]): Int = {
-    val registerState = operations.foldLeft(new RegisterState)((acc, fullOperation) => {
+  def getMax(operations: Iterator[String]): (Int, Int) = {
+    val registerState = operations.foldLeft((new RegisterState, Int.MinValue)){ case ((acc, globalMax), fullOperation) =>
       val Array(operationInput, conditionInput) = fullOperation.split(" if ")
 
       if (condition(acc, conditionInput)) {
-        operation(acc, operationInput)
+        operation(acc, globalMax, operationInput)
       } else {
-        acc
+        (acc, globalMax)
       }
-    })
+    }
 
-    registerState.values.max
+    (registerState._1.values.max, registerState._2)
   }
 
   def condition(registers: RegisterState, input: String): Boolean = {
@@ -41,16 +41,18 @@ object Registers {
     }
   }
 
-  def operation(acc: RegisterState, input: String): RegisterState = {
+  def operation(acc: RegisterState, globalMax: Int, input: String): (RegisterState, Int) = {
     val regex = new Regex("""([a-z]+) (inc|dec) (-?\d+)""", "register", "operation", "operand")
     val matches = regex.findFirstMatchIn(input).get
     val currentValue = acc.getOrElse(matches.group("register"), 0)
 
     matches.group("operation") match {
       case "inc" =>
-        acc + (matches.group("register") -> (currentValue + matches.group("operand").toInt))
+        val newValue = currentValue + matches.group("operand").toInt
+        (acc + (matches.group("register") -> newValue), List(newValue, globalMax).max)
       case "dec" =>
-        acc + (matches.group("register") -> (currentValue - matches.group("operand").toInt))
+        val newValue = currentValue - matches.group("operand").toInt
+        (acc + (matches.group("register") -> newValue), List(newValue, globalMax).max)
       case _ => throw new IllegalArgumentException(s"Bad operation operation: ${matches.group("operation")}")
     }
   }

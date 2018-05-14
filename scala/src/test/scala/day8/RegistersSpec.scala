@@ -13,7 +13,7 @@ class RegistersSpec extends FunSpec {
         "c dec -10 if a >= 1",
         "c inc -20 if c == 10"
       )
-      assert(getMax(input) === 1)
+      assert(getMax(input) === (1, 10))
     }
   }
 
